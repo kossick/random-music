@@ -4,7 +4,6 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -13,7 +12,8 @@ int main(void) {
   uid_t uid = getuid();
   struct passwd *pwd = getpwuid(uid);
   // Append music directory
-  char *musicPath = strcat(pwd->pw_dir, MUSIC_DIR);
+  char musicPath[MAXNAMLEN];
+  snprintf(musicPath, MAXNAMLEN, "%s/%s", pwd->pw_dir, MUSIC_DIR);
 
   // Get randomness seed
   time_t t;

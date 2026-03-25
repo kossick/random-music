@@ -14,13 +14,13 @@ int inInvalidChoice(const char *dirName) {
    * @return 0 (=invalid) or 1 (=valid)
    */
   char *notValid[] = {NOTVALID};
-  // Hack to get length of array
-  size_t arrayLength = (int)sizeof(notValid) / (int)sizeof(notValid[0]);
+  int i = 0;
   // Check against the elements of `NOTVALID`
-  for (int i = 0; i < arrayLength; i++) {
+  while (notValid[i] != NULL) {
     if (strcmp(dirName, notValid[i]) == 0) {
       return 0; // Not a band or album name
     }
+    i++;
   }
   return 1; // Not matching given patterns, assumed to be band name
 }
@@ -57,18 +57,9 @@ char *chooseElement(const char *basePath) {
   struct dirent *entry;
   int totalElements = countSubDir(dp);
 
-  char *elementName =
-      malloc(MAXNAMELENGTH * sizeof(char)); // arbitrary size allocation
-  if (elementName == NULL) {
-    return NULL;
-  }
-  strcpy(elementName, "");
-
-  char *tmp =
-      malloc(MAXNAMELENGTH * sizeof(char)); // used for local copy of names
-  if (tmp == NULL) {
-    return NULL;
-  }
+  static char elementName[MAXNAMELENGTH]; // arbitrary size allocation
+  snprintf(elementName, MAXNAMELENGTH, "%s", "");
+  char tmp[MAXNAMELENGTH] = ""; // used for local copy of names
 
   do {
     int chosenElement = rand() % totalElements;
@@ -76,17 +67,15 @@ char *chooseElement(const char *basePath) {
     rewinddir(dp);
     while ((entry = readdir(dp)) && n <= chosenElement) {
       if (entry->d_type == DT_DIR) {
-        strcpy(tmp, entry->d_name);
+        snprintf(tmp, MAXNAMELENGTH, "%s", entry->d_name);
       }
       n++;
     }
     if (inInvalidChoice(tmp) == 1) {
-      strcat(elementName, tmp);
+      snprintf(elementName, MAXNAMELENGTH, "%s", tmp);
     }
   } while (strcmp(elementName, "") == 0);
 
-  free(tmp);
-  tmp = NULL;
   closedir(dp);
   return elementName;
 }
@@ -100,27 +89,19 @@ struct Album *chooseMusic(const char *basePath) {
    */
 
   // Select a band
-  char *bandName = chooseElement(basePath);
+  char bandName[MAXNAMELENGTH];
+  snprintf(bandName, MAXNAMELENGTH, "%s", chooseElement(basePath));
 
   // Build path to band directory
-  char *bandPath = malloc(MAXNAMELENGTH * sizeof(char));
-  strcpy(bandPath, basePath);
-  strcat(bandPath, "/");
-  strcat(bandPath, bandName);
+  char bandPath[MAXNAMELENGTH];
+  snprintf(bandPath, MAXNAMELENGTH, "%s/%s", basePath, bandName);
 
   // Select an album
-  char *albumName = chooseElement(bandPath);
+  char albumName[MAXNAMELENGTH];
+  snprintf(albumName, MAXNAMELENGTH, "%s", chooseElement(bandPath));
 
   // Build album
   struct Album *album = buildAlbum(bandName, albumName);
-
-  // Free memory
-  free(bandPath);
-  bandPath = NULL;
-  free(bandName);
-  bandName = NULL;
-  free(albumName);
-  albumName = NULL;
 
   return album;
 }
